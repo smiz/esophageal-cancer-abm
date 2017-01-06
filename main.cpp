@@ -15,6 +15,28 @@ The thickness of your esophageal wall is 4mm, the width of 3 pennies.
 We will use 24 mm in our simulation which gives the circumference to be 75.4 mm.  
 The grid width is 0.42 mm for ni = 179 or 0.21 mm for ni = 359.
 Jumbo biopsy is about 5mmx3mm (12 by 7 grid) or (24 by 14 grid).
+
+This model is based closely on the one appearing in
+
+Kit Curtius, William D. Hazelton, Jihyoun Jeon, and E. Georg Luebeck (2015)
+A Multiscale Model Evaluates Screening for Neoplasia in Barret's Esophagus
+PLOS Computational Biology 11(5):e1004272. doi 10.1371/journal.pcbi.100472.
+
+The essential operation of the model is as follows:
+
+A grid of TissueVolume models is created. Each TissueVolume on the surface
+of the esophagus section being looked at begins life with BE. Everything 
+below the surface is NORMAL. 
+
+At some point (possibly too far into the future to matter) some of the BE volumes
+will mutate into DYSPLASIA. Then the DYSPLASIA volumes will mutate into CANCER.
+
+The DYSPLASIA volumes will spread into other parts of the BE volume. The CANCER
+volumes will spread into NORMAL and DYSPLASIA volumes.
+
+The tumor grows via these two processes of mutation and growth. All of the
+growth and mutation rules can be found in the TumorVolume class.
+
 ********************************************************************************/
 
 #define NUM_LAYERS 5
@@ -156,11 +178,13 @@ int main(int argc, char **argv)
 	int seq_num = 0;
 	while (!biopsy.empty())
 	{
+		// Take a biopsy
 		if (sim->nextEventTime()+be_onset > biopsy.front())
 		{
 			PrintCSV(seq_num++,biopsy.front());
 			biopsy.pop_front();
 		}
+		// Otherwise advance the simulation
 		else
 			sim->execNextEvent();
 	}
