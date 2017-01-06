@@ -3,7 +3,7 @@
 #include "common.h"
 
 /**
- * Model of a volume of tissue
+ * Model of a volume of tissue.
  */
 class TissueVolume:
 	public adevs::Atomic<adevs::CellEvent<int> >
@@ -22,9 +22,9 @@ class TissueVolume:
 		void gc_output(adevs::Bag<adevs::CellEvent<int> >&){}
 		~TissueVolume(){}
 	private:
-		int iType; // Type of cell
+		int iType; // Type of cell in the volume
 		double ttm, tte; // Time to mutate and expand
-		const int x, y, z;
+		const int x, y, z; // Location in the grid space
 };
 
 #endif

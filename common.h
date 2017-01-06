@@ -29,16 +29,19 @@ class Parameters
 		 */
 		double exponential(double mu);
 		/**
-		 * Select direction at random.
+		 * Select a 3D direction at random.
 		 */
 		void direction(int& dx, int& dy, int& dz);
+		/**
+		 * Select a 2D direction at random.
+		 */
 		void direction(int& dx, int& dy);
 		/**
-		 * Get the size if mm of a cell side.
+		 * Get the size in mm of a tissue volume block.
 		 */
 		double cell_size() const { return dx; }
 		/**
-		 * Set this before you do anything else.
+		 * Set the tissue volume size before you do anything else.
 		 */
 		void cell_size(double ddxx) { dx = ddxx; }
 		/**
@@ -55,8 +58,8 @@ class Parameters
 		 * Set the mutation interval for a single stem cell. Make sure
 		 * dx is set properly first.
 		 */
-		void set_mutations_per_year(double events_per_year, int type) {
-			mutate_time[type] = stem_cells_per_mm2*dx*dx/events_per_year;
+		void set_mutations_per_year(double mutations, int type) {
+			mutate_time[type] = 1.0/(stem_cells_per_mm2*dx*dx*mutations);
 		}
 		/**
 		 * Get the mutation interval (in years) for a cell site in the model
@@ -73,8 +76,8 @@ class Parameters
 			diff_time = (dx*dx)/mm2_year;
 		}
 		/**
-		 * Wrap the point into the cellspace or return false if the
-		 * point is not in the wrapped cell space.
+		 * Wrap the x,y,z point into the cellspace or return false if the
+		 * point is not in the wrapped space.
 		 */
 		bool wrap(int& x, int& y, int& z) const;
 		/**
@@ -88,13 +91,28 @@ class Parameters
 			stem_cells_per_mm2 = count;
 		}
 		/**
+		 * Set the mean age for onset of BE
+		 */
+		void be_onset_age(double years) {
+			be_onset = years;
+		}
+		/**
+		 * Get the mean age for onset of BE
+		 */
+		double be_onset_age() const {
+			return be_onset;
+		}
+		/**
 		 * Load parameter data from a text file.
 		 */
 		void load_from_file(const char* filename);
-
+		/// Delete the current singleton instance
 		static void deleteInstance();
 	private:
+		/// This is a singleton, so constructor and destructor are private
 		Parameters();
+		Parameters(const Parameters&){}
+		Parameters& operator=(const Parameters& other) { return *this; } 
 		~Parameters();
 		gsl_rng *r; // RNG and Distribution package
 		int nx, ny, nz; // Number of cells in each direction
@@ -102,6 +120,7 @@ class Parameters
 		double diff_time; // Mean time to a diffusion event
 		double mutate_time[NUM_CELL_TYPES];
 		double stem_cells_per_mm2;
+		double be_onset;
 		static Parameters* inst; // The singleton instance
 };
 

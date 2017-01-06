@@ -63,7 +63,8 @@ Parameters::Parameters():
 	nz(-1),
 	dx(-1.0),
 	diff_time(adevs_inf<double>()),
-	stem_cells_per_mm2(-1.0)
+	stem_cells_per_mm2(-1.0),
+	be_onset(-1.0)
 {
 	r = gsl_rng_alloc(gsl_rng_mt19937);
 	gsl_rng_set(r,0);
@@ -104,11 +105,18 @@ void Parameters::load_from_file(const char* filename)
 			mutate_dysplasia = value;
 		else if (param == "stem_cell_density")
 			set_stem_cells_per_mm2(value);
+		else if (param == "be_onset_age")
+			be_onset_age(value);
 		else
 		{
 			cout << "Unknown parameter " << param << endl;
 			exit(0);
 		}
+	}
+	if (be_onset < 0.0)
+	{
+		cout << "The be_onset_age must be positive." << endl;
+		exit(0);
 	}
 	if (stem_cells_per_mm2 < 0.0)
 	{

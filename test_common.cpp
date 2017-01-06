@@ -50,7 +50,7 @@ void test_mutation_interval()
 		Parameters::getInstance()->set_mutations_per_year(i+1,i);
 		double interval = Parameters::getInstance()->get_mutation_interval(i);
 		cout << "type " << i << " interval is " << interval << " years" << endl;
-		assert(interval == stem_cell_density*dx*dx/(double)(i+1));
+		assert(interval == 1.0/(stem_cell_density*dx*dx*(double)(i+1)));
 	}
 	cout << "TEST PASSED" << endl;
 }

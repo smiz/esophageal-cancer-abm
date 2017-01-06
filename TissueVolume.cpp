@@ -31,7 +31,7 @@ void TissueVolume::delta_int()
 		if (tte < adevs_inf<double>()) tte -= ttm;
 		// Cancer never mutates
 		assert(iType < CANCER);
-		// Advance our type
+		// Evolve our type
 		iType++;
 		// If we can mutate as the new type, pick a time to mutate
 		if (p->get_mutation_interval(iType) < adevs_inf<double>())
@@ -44,19 +44,18 @@ void TissueVolume::delta_int()
 		// Otherwise never expand
 		else tte = adevs_inf<double>();
 	}
-	// Otherwise we will move
+	// If not mutating, then we are moving
 	else 
 	{
-		// Better be expanding if we didn't mutate
+		// Only dysplasia and cancer can spread
 		assert(iType == DYSPLASIA || iType == CANCER);
 		// Reduce our time to mutate
 		if (ttm < adevs_inf<double>()) ttm -= tte;
+		// Cancer can't mutate, but dysplasia can
 		assert(iType == CANCER || ttm < adevs_inf<double>());
-		// Expand again 
+		// Set time to next expansion 
 		tte = p->exponential(p->get_expand_interval());
 	}
-	assert(tte >= 0.0);
-	assert(ttm >= 0.0);
 }
 
 void TissueVolume::delta_ext(double e, const adevs::Bag<adevs::CellEvent<int> >& xb)
@@ -64,12 +63,13 @@ void TissueVolume::delta_ext(double e, const adevs::Bag<adevs::CellEvent<int> >&
 	// Reduce the time to next event
 	if (ttm < adevs_inf<double>()) ttm -= e;
 	if (tte < adevs_inf<double>()) tte -= e;
-	// Get the most aggressive type that is visit us
-	int newType = 0;
+	// Get the most aggressive type that is visiting us
+	int newType = NORMAL;
 	for (auto x : xb)
 	{
+		// Only dysplasia and cancer can spread
 		assert(x.value == DYSPLASIA || x.value == CANCER);
-		if (x.value > newType) newType = x.value;
+		x.value = (x.value > newType) ? x.value : newType;
 	}
 	// If we are going to be invaded, reset the event timers
 	if
@@ -78,13 +78,14 @@ void TissueVolume::delta_ext(double e, const adevs::Bag<adevs::CellEvent<int> >&
 		(
 			newType == CANCER // Cancer always spreads
 				||
-			(iType == BE && newType == DYSPLASIA) // Dysplasia can spread in BE
+			(iType == BE && newType == DYSPLASIA) // Dysplasia can spread into BE
 		)
 	)
 	{
+		// Change our time
 		iType = newType;
 		Parameters* p = Parameters::getInstance();
-		// Expand
+		// Set time to spread
 		tte = p->exponential(p->get_expand_interval());
 		// Mutate if we can
 		if (p->get_mutation_interval(iType) < adevs_inf<double>())
@@ -98,15 +99,15 @@ void TissueVolume::delta_conf(const adevs::Bag<adevs::CellEvent<int> >& xb)
 {
 	delta_int();
 	delta_ext(0.0,xb);
-	assert(tte >= 0.0);
-	assert(ttm >= 0.0);
 }
 
 void TissueVolume::output_func(adevs::Bag<adevs::CellEvent<int> >& yb)
 {
-	// Output our type if we are expanding
+	// Output our type if we are expanding. This output will go
+	// to one of our neighbors.
 	if (tte < ttm)
 	{
+		// Only cancer and dysplasia can spread
 		assert(iType == CANCER || iType == DYSPLASIA);
 		int dx = 0, dy = 0, dz = 0;
 		adevs::CellEvent<int> out;
@@ -125,4 +126,3 @@ void TissueVolume::output_func(adevs::Bag<adevs::CellEvent<int> >& yb)
 		yb.insert(out);
 	}
 }
-
