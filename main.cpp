@@ -3,9 +3,7 @@
 #include <string>
 #include <cstring>
 #include "common.h"
-#include "des/des.h"
-#include "des/Cell.h"
-#include "des/CellGrid.h"
+#include "TissueVolume.h"
 using namespace std;
 using namespace adevs;
 
@@ -38,6 +36,10 @@ static const int ni = (circumference / grid_size)+1; // Spatial points in X dire
 static const int nj = (length / grid_size)+1; // Spatial points in Y direction. 
 static const int nk = (thickness / grid_size)+1;	 // Spatial points in Z direction. 
 
+static CellSpace<int>* tissue;
+static Simulator<CellEvent<int> >* sim;
+static std::string inputData = "input.txt";
+
 /**
  * This data can be visualized using paraview. See 
  * www.paraview.org/Wiki/ParaView/Data_formats
@@ -51,7 +53,7 @@ void PrintCSV(int seq_num, double t)
 		"dysplasia",
 		"cancer",
 	};
-	int types[6] = { 0, 0, 0, 0, 0, 0 };
+	int types[NUM_CELL_TYPES] = { 0, 0, 0, 0 };
 	char filename[100];
 	sprintf(filename,"tumor.csv.%d",seq_num);
 	ofstream fout(filename);
@@ -60,116 +62,75 @@ void PrintCSV(int seq_num, double t)
 		for (int j = 0; j < nj; j++)
 			for (int k = 0; k < nk; k++)
 			{
-				int type = tissue->get_iType(i,j,k);
+				int type =
+					dynamic_cast<TissueVolume*>(tissue->getModel(i,j,k))->itype();
 				types[type]++;
-				if (type > 1)
+				if (type > BE)
 				{
 					fout << i << "," << j << "," << k << "," << type << endl;
 				}
 			}
 	fout.close();
 	cout << "t = " << t << endl;
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < NUM_CELL_TYPES; i++)
 	{
 		cout << names[i] << " : " << types[i] << " " << endl;
 	}
 }
 
 //===========================================================================//
-bool InitModelCondition(void)
+void InitModel(void)
 {
-	des_model = new des::CellGrid(ni,nj,nk);
-	// Set lifespans
-	assert(tab_cell_death_rate.NumRows() == 6);
-	for (int i = 0; i < 6; i++)
+	Parameters::getInstance()->cell_size(grid_size);
+	Parameters::getInstance()->xdim(ni);
+	Parameters::getInstance()->ydim(nj);
+	Parameters::getInstance()->zdim(nk);
+	Parameters::getInstance()->load_from_file(inputData.c_str());
+
+	tissue = new CellSpace<int>(ni,nj,nk);
+
+	for (int i = 0; i < ni; i++)
 	{
-		double rate = tab_cell_death_rate.GetValue(i);
-		if (rate > 0.0) rate = DAYS_TO_YEARS/rate;
-		des::CellComponent::setCellLifespan(i,rate);
-	}
-	// Set mitotic period
-	assert(tab_mitotic_period.NumRows() == 6);
-	for (int i = 0; i < 6; i++)
-	{
-		des::CellComponent::setMitosisPeriod(i,tab_mitotic_period.GetValue(i)*DAYS_TO_YEARS);
-	}
-	// Setup mutation data
-	assert(tab_transition.NumRows() == 6);
-	for (int i = 0; i < 6; i++)
-	{
-		for (int j = 0; j < 6; j++)
+		for (int j = 0; j < nj; j++)
 		{
-			des::CellComponent::setMutationRate(i,j,tab_transition.GetValue(i,j));
-		}
-	}
-	// Setup diffusion data
-	int zpos = 0;
-	assert(tab_layer_structure.NumRows() == NUM_LAYERS);
-	for (int row = 0; row < NUM_LAYERS; row++)
-	{
-		double D = tab_layer_structure.GetValue(row,0);
-		for (int layer = 0; layer < (int)(LayerThicknessFraction[row]*(double)(nk))+1 && zpos < nk; layer++)
-		{
-			for (int i = 0; i < ni; i++)
+			for (int k = 0; k < nk; k++)
 			{
-				for (int j = 0; j < nj; j++)
-				{
-					des_model->setDiffusionConst(D,i,j,zpos);
-				}
-			}
-			zpos++;
-		}
-	}
-	assert(zpos == nk);
-	// Initialize cells
-	int xstart = gsl_rng_get(r)%ni;
-	int ystart = gsl_rng_get(r)%nj;
-	int zstart = gsl_rng_get(r)%nk;
-	for(int i = 0; i < ni; i++)
-	{
-		for(int j = 0; j < nj; j++)
-		{
-			for(int k = 0; k < nk; k++)
-			{
-				if (i == xstart && j == ystart && k == zstart)
-					des_model->addInitialCell(i,j,k,2);
+				if (k == 0)
+					tissue->add(new TissueVolume(BE,i,j,k),i,j,k);
 				else
-					des_model->addInitialCell(i,j,k,1);
+					tissue->add(new TissueVolume(NORMAL,i,j,k),i,j,k);
 			}
 		}
 	}
 	// Create the simulator
-	sim = new des::Simulator(des_model);
-	// Done!
-	return true;
+	sim = new Simulator<CellEvent<int> >(tissue);
 }
 
 int main(int argc, char **argv)
 {
-	double tStop = 600.0, bOutputPeriod = tStop/10.0;
-
+	double tStop = 60.0, bOutputPeriod = tStop/10.0;
 	for( int i = 1; i < argc; ++i )
-    {
-		if( strcmp( argv[i], "-var" ) == 0 && ++i < argc )
-        {
-            InputFileName = argv[i];
-        }
+	{
+		if(strcmp( argv[i],"-var") == 0 && ++i < argc)
+		{
+			inputData = argv[i];
+		}
 		else if( strcmp( argv[i], "-output_period" ) == 0 && ++i < argc)
-        {
+		{
 			bOutputPeriod = atof(argv[i]);
 		}
 		else if( strcmp( argv[i], "-end_time" ) == 0 && ++i < argc )
-        {
+		{
 			tStop = atof( argv[i] );
-        }
+		}
 		else if( strcmp( argv[i], "-ranseed" ) == 0 && ++i < argc )
-        {
-            ranseed = (unsigned)atol( argv[i] );
-        }
+		{
+			unsigned ranseed = (unsigned)atol( argv[i] );
+			Parameters::getInstance()->set_seed(ranseed);
+		}
 	}
 	//Initialize the variables and tables 
-	InitFunction();
-	InitModelCondition();
+	InitModel();
 	// Run the simulation
 	int seq_num = 0;
 	double tL = 0.0;
@@ -184,6 +145,8 @@ int main(int argc, char **argv)
 	}
 	PrintCSV(seq_num++,tL);
 	// Cleanup
-	PreKill();
+	delete sim;
+	delete tissue;
+	Parameters::deleteInstance();
 	return 0;
 }

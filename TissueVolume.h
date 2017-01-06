@@ -6,7 +6,7 @@
  * Model of a volume of tissue
  */
 class TissueVolume:
-	public adevs::CellSpace<int>::Cell
+	public adevs::Atomic<adevs::CellEvent<int> >
 {
 	public:
 		TissueVolume(int iType, int x, int y, int z);
@@ -19,7 +19,8 @@ class TissueVolume:
 		int ypos() const { return y; }
 		int zpos() const { return z; }
 		int itype() const { return iType; }
-		~TissueVolume();
+		void gc_output(adevs::Bag<adevs::CellEvent<int> >&){}
+		~TissueVolume(){}
 	private:
 		int iType; // Type of cell
 		double ttm, tte; // Time to mutate and expand

@@ -22,6 +22,16 @@ void Parameters::direction(int& dx, int& dy, int& dz)
 	else dz = -1;
 }
 
+void Parameters::direction(int& dx, int& dy)
+{
+	int dir = gsl_rng_uniform_int (r,4);
+	dx = dy = 0;
+	if (dir == 0) dx = 1;
+	else if (dir == 1) dx = -1;
+	else if (dir == 2) dy = 1;
+	else dy = -1;
+}
+
 bool Parameters::wrap(int& x, int& y, int& z) const
 {
 	if (x < 0) x = nx-1;
@@ -48,12 +58,12 @@ void Parameters::deleteInstance()
 }
 
 Parameters::Parameters():
-	dx(-1.0),
-	stem_cells_per_mm2(-1.0),
-	diff_time(adevs_inf<double>()),
 	nx(-1),
 	ny(-1),
-	nz(-1)
+	nz(-1),
+	dx(-1.0),
+	diff_time(adevs_inf<double>()),
+	stem_cells_per_mm2(-1.0)
 {
 	r = gsl_rng_alloc(gsl_rng_mt19937);
 	gsl_rng_set(r,0);
@@ -70,13 +80,16 @@ Parameters::~Parameters()
 
 void Parameters::load_from_file(const char* filename)
 {
+	double mutate_normal = -1.0,
+		mutate_be = -1.0,
+		mutate_dysplasia = -1.0;
 	ifstream fin(filename);
 	if (fin.bad())
 	{
 		cout << "Could not open file " << filename << endl;
 		exit(0);
 	}
-	for (string line; getline(fin,line); )
+	for (string line; getline(fin,line); !fin.eof())
 	{
 		istringstream sin(line);
 		string param; double value;
@@ -84,11 +97,11 @@ void Parameters::load_from_file(const char* filename)
 		if (param == "diffusion_rate")
 			set_diffusion_rate(value);	
 		else if (param == "mutate_normal")
-			set_mutations_per_year(value,NORMAL);
+			mutate_normal = value;
 		else if (param == "mutate_be")
-			set_mutations_per_year(value,BE);
+			mutate_be = value;
 		else if (param == "mutate_dysplasia")
-			set_mutations_per_year(value,DYSPLASIA);
+			mutate_dysplasia = value;
 		else if (param == "stem_cell_density")
 			set_stem_cells_per_mm2(value);
 		else
@@ -97,5 +110,16 @@ void Parameters::load_from_file(const char* filename)
 			exit(0);
 		}
 	}
+	if (stem_cells_per_mm2 < 0.0)
+	{
+		cout << "The stem_cell_density must be positive." << endl;
+		exit(0);
+	}
+	if (mutate_normal > 0.0)
+		set_mutations_per_year(mutate_normal,NORMAL);
+	if (mutate_be > 0.0)
+		set_mutations_per_year(mutate_be,BE);
+	if (mutate_dysplasia > 0.0)
+		set_mutations_per_year(mutate_dysplasia,DYSPLASIA);
 	fin.close();
 }

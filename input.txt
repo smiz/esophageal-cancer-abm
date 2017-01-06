@@ -1,0 +1,4 @@
+diffusion_rate 2.0
+mutate_be 1E-4
+mutate_dysplasia 1E-4
+stem_cell_density 1000

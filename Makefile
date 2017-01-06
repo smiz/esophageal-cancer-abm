@@ -1,7 +1,7 @@
 # Compiler flags
 ADEVS=${HOME}/Code/adevs-code
 ABM=${PWD}
-CFLAGS = -g -std=c++11 -fopenmp -I${ADEVS}/include -I${ABM}
+CFLAGS = -O3 -Wall -std=c++11 -fopenmp -I${ADEVS}/include -I${ABM}
 LIBS = \
 	-lgsl \
 	-lblas 
@@ -10,7 +10,8 @@ LIBS = \
 CXX = g++
 OBJS = \
 	   common.o \
-	   TissueVolume.o
+	   TissueVolume.o \
+		main.o
 
 .SUFFIXES: .cpp 
 .cpp.o:

@@ -32,6 +32,7 @@ class Parameters
 		 * Select direction at random.
 		 */
 		void direction(int& dx, int& dy, int& dz);
+		void direction(int& dx, int& dy);
 		/**
 		 * Get the size if mm of a cell side.
 		 */
@@ -68,7 +69,7 @@ class Parameters
 		/**
 		 * Set the diffusion rate for malignant cells.
 		 */
-		double set_diffusion_rate(double mm2_year) {
+		void set_diffusion_rate(double mm2_year) {
 			diff_time = (dx*dx)/mm2_year;
 		}
 		/**
