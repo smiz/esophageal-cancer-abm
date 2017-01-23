@@ -29,6 +29,10 @@ class Parameters
 		 */
 		double exponential(double mu);
 		/**
+		 * Return a number in [0,1]
+		 */
+		double uniform();
+		/**
 		 * Select a 3D direction at random.
 		 */
 		void direction(int& dx, int& dy, int& dz);

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <cstring>
+#include <list>
 #include "common.h"
 #include "TissueVolume.h"
 using namespace std;
@@ -95,7 +96,7 @@ void PrintCSV(int seq_num, double t)
 				int type =
 					dynamic_cast<TissueVolume*>(tissue->getModel(i,j,k))->itype();
 				types[type]++;
-				if (type > BE)
+				if (type >= BE)
 				{
 					fout << i << "," << j << "," << k << "," << type << endl;
 				}
@@ -121,15 +122,17 @@ void InitModel(void)
 	Parameters::getInstance()->load_from_file(inputData.c_str());
 	// Create the simulation grid
 	tissue = new CellSpace<int>(ni,nj,nk);
+	int BeBase = Parameters::getInstance()->uniform()*nj;
 	// Populate it with TissueVolume objects
 	for (int i = 0; i < ni; i++)
 	{
+		int BeTongue = BeBase+Parameters::getInstance()->uniform()*(nj-BeBase);
 		for (int j = 0; j < nj; j++)
 		{
 			for (int k = 0; k < nk; k++)
 			{
 				// Top layer has BE
-				if (k == 0)
+				if (k == 0 && j < BeTongue)
 					tissue->add(new TissueVolume(BE,i,j,k),i,j,k);
 				// Everything else is initially normal
 				else

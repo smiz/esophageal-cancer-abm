@@ -5,6 +5,11 @@
 
 Parameters* Parameters::inst = NULL; // The singleton instance
 
+double Parameters::uniform()
+{
+	return gsl_rng_uniform(r);
+}
+
 double Parameters::exponential(double mu)
 {
 	return gsl_ran_exponential(r,mu);
