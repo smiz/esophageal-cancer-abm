@@ -51,10 +51,10 @@ static const double LayerThicknessFraction[NUM_LAYERS] =
 	0.4  // Submucosa
 };
 
-static const double grid_size = 0.42;
-static const double thickness = 4.0;
-static const double circumference = 75.4;
-static const double length = circumference;
+static const double grid_size = 0.42; // mm
+static const double thickness = 4.0; // mm
+static const double circumference = 75.4; // mm
+static const double length = 250.0; // mm
 static const int ni = (circumference / grid_size)+1; // Spatial points in X direction. 
 static const int nj = (length / grid_size)+1; // Spatial points in Y direction. 
 static const int nk = (thickness / grid_size)+1;	 // Spatial points in Z direction. 
@@ -69,6 +69,24 @@ static std::string inputData = "input.txt";
 static list<double> biopsy;
 // Onset age for be
 static double be_onset;
+
+/**
+ * Calculate the length of the BE segment in grid points.
+ */
+int calculate_be_length()
+{
+	const double long_be_prob = 0.63;
+	const double long_be_mean = 6.4; // cm
+	const double long_be_std_dev = 3.1; // cm
+	const double short_be_mean = 1.4; // cm
+	const double short_be_std_dev = 0.7; // cm
+	double length; 
+	if (Parameters::getInstance()->uniform() < long_be_prob)
+		length = Parameters::getInstance()->normal(long_be_mean,long_be_std_dev);
+	else
+		length = Parameters::getInstance()->normal(short_be_mean,short_be_std_dev);
+	return (int(length*10.0/grid_size)+1);
+}
 
 /**
  * This data can be visualized using paraview. See 
@@ -122,17 +140,18 @@ void InitModel(void)
 	Parameters::getInstance()->load_from_file(inputData.c_str());
 	// Create the simulation grid
 	tissue = new CellSpace<int>(ni,nj,nk);
-	int BeBase = Parameters::getInstance()->uniform()*nj;
+	int BeSize = calculate_be_length();
+	cout << "Segment has length of " << ((double)(BeSize)*grid_size/10.0) << " cm" << endl;
+	cout << "Extends over " << (((double)(BeSize)/(double)(nj))*100.0) << "\% of length" << endl;
 	// Populate it with TissueVolume objects
 	for (int i = 0; i < ni; i++)
 	{
-		int BeTongue = BeBase+Parameters::getInstance()->uniform()*(nj-BeBase);
 		for (int j = 0; j < nj; j++)
 		{
 			for (int k = 0; k < nk; k++)
 			{
 				// Top layer has BE
-				if (k == 0 && j < BeTongue)
+				if (k == 0 && j < BeSize)
 					tissue->add(new TissueVolume(BE,i,j,k),i,j,k);
 				// Everything else is initially normal
 				else

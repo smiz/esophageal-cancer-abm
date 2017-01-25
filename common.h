@@ -32,6 +32,8 @@ class Parameters
 		 * Return a number in [0,1]
 		 */
 		double uniform();
+		/** Sample a normal distribution */
+		double normal(double mean, double std_dev);
 		/**
 		 * Select a 3D direction at random.
 		 */

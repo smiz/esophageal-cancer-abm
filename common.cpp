@@ -15,6 +15,11 @@ double Parameters::exponential(double mu)
 	return gsl_ran_exponential(r,mu);
 }
 
+double Parameters::normal(double mean, double std_dev)
+{
+	return gsl_ran_gaussian(r,sqrt(std_dev))+mean;
+}
+
 void Parameters::direction(int& dx, int& dy, int& dz)
 {
 	int dir = gsl_rng_uniform_int (r,6);
