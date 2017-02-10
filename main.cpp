@@ -85,6 +85,7 @@ int calculate_be_length()
 		length = Parameters::getInstance()->normal(long_be_mean,long_be_std_dev);
 	else
 		length = Parameters::getInstance()->normal(short_be_mean,short_be_std_dev);
+	if (length < 0.0) length = 0.0;
 	return (int(length*10.0/grid_size)+1);
 }
 
