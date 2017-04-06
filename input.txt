@@ -1,5 +1,5 @@
-diffusion_rate 10.0
+diffusion_rate 0.1
 be_onset_age 40
-mutate_be 1E-4
-mutate_dysplasia 1E-5
+mutate_be 1E-8
+mutate_dysplasia 1E-8
 stem_cell_density 3000

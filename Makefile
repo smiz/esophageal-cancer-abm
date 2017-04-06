@@ -1,7 +1,7 @@
 # Compiler flags
-ADEVS=${HOME}/Code/parallel-sim-try1
+ADEVS=${HOME}/Code/adevs-code
 ABM=${PWD}
-CFLAGS = -O3 -Wall -std=c++11 -I${ADEVS}/include -I${ABM}
+CFLAGS = -O3 -fopenmp -Wall -std=c++11 -I${ADEVS}/include -I${ABM}
 LIBS = \
 	-lgsl \
 	-lblas 

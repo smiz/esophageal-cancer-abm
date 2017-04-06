@@ -64,12 +64,12 @@ void TissueVolume::delta_ext(double e, const adevs::Bag<adevs::CellEvent<int> >&
 	if (ttm < adevs_inf<double>()) ttm -= e;
 	if (tte < adevs_inf<double>()) tte -= e;
 	// Get the most aggressive type that is visiting us
-	int newType = NORMAL;
+	int newType = iType;
 	for (auto x : xb)
 	{
 		// Only dysplasia and cancer can spread
 		assert(x.value == DYSPLASIA || x.value == CANCER);
-		x.value = (x.value > newType) ? x.value : newType;
+		newType = (x.value > newType) ? x.value : newType;
 	}
 	// If we are going to be invaded, reset the event timers
 	if
